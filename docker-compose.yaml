@@ -1,0 +1,56 @@
+version: "3.8"
+services:
+  mongodb:
+    image: mongo
+    container_name: mongodb
+    ports:
+      - 27017:27017
+    volumes:
+      - ./data/db:/data/db
+    env_file:
+      - ./env/mongo.env
+    networks:
+      - goals-net
+    restart: always
+
+  backend:
+    build: ./backend
+    image: goals-backend
+    container_name: goals-backend
+    ports:
+      - 80:80
+    env_file:
+      - ./env/backend.env
+    volumes:
+      - ./backend:/app/logs
+      - ./backend:/app
+      - /app/node_modules
+    depends_on:
+      - mongodb
+    networks:
+      - goals-net
+    restart: always
+
+  frontend:
+    build: ./frontend
+    image: goals-frontend
+    container_name: goals-frontend
+    ports:
+      - 3000:3000
+    environment:
+      - WDS_SOCKET_HOST=127.0.0.1 
+      - CHOKIDAR_USEPOLLING=true
+      - WATCHPACK_POLLING=true 
+    volumes:
+      - ./frontend/src:/app/src
+    depends_on:
+      - backend
+    restart: always
+
+volumes:
+  data:
+  logs:    
+
+networks:
+  goals-net:
+    driver: bridge
